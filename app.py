@@ -1,6 +1,7 @@
 from flask import Flask, request, g
 import mysql.connector
 from models import create_tables
+import bcrypt
 
 app = Flask(__name__)
 
@@ -44,18 +45,56 @@ def get_data(table):
         cursor.close()
 
 
+@app.route("/login", methods=["POST"])
+def login():
+    try:
+        data = request.json
+        email = data.get("email")
+        senha = data.get("senha")
+
+        if email and senha:
+            db = get_db()
+            cursor = db.cursor(dictionary=True)
+            cursor.execute(
+                f"SELECT * FROM passageiro WHERE email = '{email}'"
+            )
+            passageiro = cursor.fetchone()
+
+            if passageiro:
+                # Verifique a senha criptografada usando bcrypt.checkpw
+                if bcrypt.checkpw(senha.encode('utf-8'), passageiro['senha'].encode('utf-8')):
+                    return {"message": "Login bem-sucedido"}, 200
+                else:
+                    return {"error": "Credenciais inválidas"}, 401
+            else:
+                return {"error": "Usuário não encontrado"}, 404
+        else:
+            return {"error": "Dados inválidos"}, 400
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
 @app.route("/passageiro", methods=["POST"])
 def create_passageiro():
     try:
         data = request.json
         nome = data.get("nome")
         cpf = data.get("cpf")
+        email = data.get("email")
+        senha = data.get("senha")
 
-        if nome and cpf:
+        if nome and cpf and email and senha:
+            hashed_password = bcrypt.hashpw(
+                senha.encode('utf-8'), bcrypt.gensalt())
+
             db = get_db()
             cursor = db.cursor()
             cursor.execute(
-                "INSERT INTO passageiro (nome, cpf) VALUES (%s, %s)", (nome, cpf))
+                "INSERT INTO passageiro (nome, cpf, email, senha) VALUES (%s, %s, %s, %s)",
+                (nome, cpf, email, hashed_password)
+            )
             db.commit()
             return {"message": "Passageiro adicionado"}, 201
         else:

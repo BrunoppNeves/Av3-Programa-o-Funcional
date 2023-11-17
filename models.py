@@ -1,9 +1,11 @@
-def create_tables(cursor):    
+def create_tables(cursor):
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS `agencia_de_viagens`.`passageiro` (
         `id` INT NOT NULL AUTO_INCREMENT,
         `nome` VARCHAR(45) NOT NULL,
         `cpf` VARCHAR(45) NOT NULL,
+        `email` VARCHAR(255) NOT NULL,
+        `senha` VARCHAR(255) NOT NULL,
         PRIMARY KEY (`id`),
         UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE,
         UNIQUE INDEX `cpf_UNIQUE` (`cpf` ASC) VISIBLE)
