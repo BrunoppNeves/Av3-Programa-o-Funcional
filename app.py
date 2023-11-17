@@ -66,13 +66,13 @@ def create_passageiro():
         cursor.close()
 
 
-@app.route("/passageiro/<string:cpf>", methods=["GET"])
-def get_passageiro(cpf):
+@app.route("/passageiro/<string:idPassageiro>", methods=["GET"])
+def get_passageiro(idPassageiro):
     try:
         db = get_db()
         cursor = db.cursor(dictionary=True)
         cursor.execute(
-            f"SELECT * FROM passageiro WHERE cpf = '{cpf}'")
+            f"SELECT * FROM passageiro WHERE id = {idPassageiro}")
         data = cursor.fetchall()
 
         return data
@@ -82,48 +82,51 @@ def get_passageiro(cpf):
         cursor.close()
 
 
-@app.route("/passageiro/<string:cpf>", methods=["PUT"])
-def update_passageiro(cpf):
+@app.route("/passageiro/<string:idPassageiro>", methods=["PATCH"])
+def update_passageiro(idPassageiro):
+    cursor = None
     try:
+        passageiro = get_passageiro(idPassageiro)
+        if len(passageiro) <= 0:
+            return {"error": "Passageiro não encontrado"}, 404
+
         data = request.json
-        nome = data.get("nome")
-        cpf_novo = data.get("cpf")
+        nome = data.get("nome") if data.get(
+            "nome") else passageiro[0].get("nome")
+        cpf_novo = data.get("cpf") if data.get(
+            "cpf") else passageiro[0].get("cpf")
 
-        if nome and cpf:
-            passageiro = get_passageiro(cpf)
-            if not passageiro:
-                return {"error": "Passageiro não encontrado"}, 404
-
-            db = get_db()
-            cursor = db.cursor()
-            cursor.execute(
-                f"UPDATE passageiro SET nome = '{nome}', cpf = '{cpf_novo}' WHERE id = {passageiro[0]['id']}"
-            )
-            db.commit()
-
-            passageiro_novo = get_passageiro(cpf_novo)
-            return {"message": "Passageiro atualizado", "data": passageiro_novo}, 200
-        else:
-            return {"error": "Dados inválidos"}, 400
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"UPDATE passageiro SET nome = '{nome}', cpf = '{cpf_novo}' WHERE id = {idPassageiro}"
+        )
+        db.commit()
+        passageiro_novo = get_passageiro(idPassageiro)
+        return {"message": "Passageiro atualizado", "data": passageiro_novo}, 200
     except mysql.connector.Error as err:
+        print("deu erro")
         return {"error": f"Error: {err}"}, 500
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
 
 
-@app.route("/passageiro/<string:cpf>", methods=["DELETE"])
-def delete_passageiro(cpf):
+@app.route("/passageiro/<string:idPassageiro>", methods=["DELETE"])
+def delete_passageiro(idPassageiro):
+    cursor = None
     try:
         db = get_db()
         cursor = db.cursor()
         cursor.execute(
-            f"DELETE FROM passageiro WHERE cpf = '{cpf}'")
+            f"DELETE FROM passageiro WHERE id = {idPassageiro}")
         db.commit()
         return {"message": "Passageiro deletado"}, 200
     except mysql.connector.Error as err:
         return {"error": f"Error: {err}"}, 500
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
 
 
 if __name__ == "__main__":
