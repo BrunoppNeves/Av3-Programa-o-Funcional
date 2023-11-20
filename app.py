@@ -44,6 +44,8 @@ def get_data(table):
     finally:
         cursor.close()
 
+# -------------------------------------->   LOGIN    <--------------------------------------
+
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -74,6 +76,8 @@ def login():
         return {"error": f"Error: {err}"}, 500
     finally:
         cursor.close()
+
+# -------------------------------------->   PASSAGEIRO    <--------------------------------------
 
 
 @app.route("/passageiro", methods=["POST"])
@@ -168,8 +172,7 @@ def delete_passageiro(idPassageiro):
             cursor.close()
 
 
-# CIA_AEREA
-
+# -------------------------------------->   CIA AÉREA    <--------------------------------------
 @app.route("/cia_aerea", methods=["POST"])
 def create_ciaaerea():
     try:
@@ -253,6 +256,275 @@ def delete_ciaaerea(idCiaaerea):
         if cursor:
             cursor.close()
 
+# -------------------------------------->   CIDADE    <--------------------------------------
+
+
+@app.route("/cidade", methods=["POST"])
+def create_cidade():
+    try:
+        data = request.json
+        nome = data.get("nome")
+
+        if nome:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "INSERT INTO cidade (nome) VALUES (%s)",
+                (nome,)
+            )
+            db.commit()
+            return {"message": "Cidade adicionada"}, 201
+        else:
+            return {"error": "Dados inválidos"}, 400
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/cidade/<string:idCidade>", methods=["GET"])
+def get_cidade(idCidade):
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT * FROM cidade WHERE id = {idCidade}")
+        data = cursor.fetchall()
+
+        return data
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/cidade/<string:idCidade>", methods=["PATCH"])
+def update_cidade(idCidade):
+    cursor = None
+    try:
+        cidade = get_cidade(idCidade)
+        if len(cidade) <= 0:
+            return {"error": "Cidade não encontrada"}, 404
+
+        data = request.json
+        nome = data.get("nome") if data.get(
+            "nome") else cidade[0].get("nome")
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"UPDATE cidade SET nome = '{nome}' WHERE id = {idCidade}"
+        )
+        db.commit()
+        cidade_nova = get_cidade(idCidade)
+        return {"message": "Cidade atualizada", "data": cidade_nova}, 200
+    except mysql.connector.Error as err:
+        print("deu erro")
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
+
+
+@app.route("/cidade/<string:idCidade>", methods=["DELETE"])
+def delete_cidade(idCidade):
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"DELETE FROM cidade WHERE id = {idCidade}")
+        db.commit()
+        return {"message": "Cidade deletada"}, 200
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
+
+# -------------------------------------->   AEROPORTO    <--------------------------------------
+
+
+@app.route("/aeroporto", methods=["POST"])
+def create_aeroporto():
+    try:
+        data = request.json
+        cidade_id = data.get("cidade_id")
+        nome = data.get("nome")
+
+        if cidade_id and nome:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "INSERT INTO aeroporto (cidade_id, nome) VALUES (%s, %s)",
+                (cidade_id, nome,)
+            )
+            db.commit()
+            return {"message": "Aeroporto adicionado"}, 201
+        else:
+            return {"error": "Dados inválidos"}, 400
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/aeroporto/<string:idAeroporto>", methods=["GET"])
+def get_aeroporto(idAeroporto):
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT * FROM aeroporto WHERE id = {idAeroporto}")
+        data = cursor.fetchall()
+
+        return data
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/aeroporto/<string:idAeroporto>", methods=["PATCH"])
+def update_aeroporto(idAeroporto):
+    cursor = None
+    try:
+        aeroporto = get_aeroporto(idAeroporto)
+        if len(aeroporto) <= 0:
+            return {"error": "Aeroporto não encontrado"}, 404
+
+        data = request.json
+        cidade_id = data.get("cidade_id") if data.get(
+            "cidade_id") else aeroporto[0].get("cidade_id")
+        nome = data.get("nome") if data.get(
+            "nome") else aeroporto[0].get("nome")
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"UPDATE aeroporto SET cidade_id = '{cidade_id}', nome = '{nome}' WHERE id = {idAeroporto}"
+        )
+        db.commit()
+        aeroporto_novo = get_aeroporto(idAeroporto)
+        return {"message": "Aeroporto atualizado", "data": aeroporto_novo}, 200
+    except mysql.connector.Error as err:
+        print("deu erro")
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
+
+
+@app.route("/aeroporto/<string:idAeroporto>", methods=["DELETE"])
+def delete_aeroporto(idAeroporto):
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"DELETE FROM aeroporto WHERE id = {idAeroporto}")
+        db.commit()
+        return {"message": "Aeroporto deletado"}, 200
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
+
+# -------------------------------------->   VOO    <--------------------------------------
+
+
+@app.route("/voo", methods=["POST"])
+def create_voo():
+    try:
+        data = request.json
+        origem = data.get("origem")
+        destino = data.get("destino")
+        cia_aerea_id = data.get("cia_aerea_id")
+        horario = data.get("horario")
+
+        if origem and destino and cia_aerea_id and horario:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "INSERT INTO voo (origem, destino, cia_aerea_id, horario) VALUES (%s, %s, %s, %s)",
+                (origem, destino, cia_aerea_id, horario,)
+            )
+            db.commit()
+            return {"message": "Voo adicionado"}, 201
+        else:
+            return {"error": "Dados inválidos"}, 400
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/voo/<string:idVoo>", methods=["GET"])
+def get_voo(idVoo):
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT * FROM voo WHERE id = {idVoo}")
+        data = cursor.fetchall()
+
+        return data
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/voo/<string:idVoo>", methods=["PATCH"])
+def update_voo(idVoo):
+    cursor = None
+    try:
+        voo = get_voo(idVoo)
+        if len(voo) <= 0:
+            return {"error": "Voo não encontrado"}, 404
+
+        data = request.json
+        origem = data.get("origem") if data.get(
+            "origem") else voo[0].get("origem")
+        destino = data.get("destino") if data.get(
+            "destino") else voo[0].get("destino")
+        cia_aerea_id = data.get("cia_aerea_id") if data.get(
+            "cia_aerea_id") else voo[0].get("cia_aerea_id")
+        horario = data.get("horario") if data.get(
+            "horario") else voo[0].get("horario")
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"UPDATE voo SET origem = '{origem}', destino = '{destino}', cia_aerea_id = '{cia_aerea_id}', horario = '{horario}' WHERE id = {idVoo}"
+        )
+        db.commit()
+        voo_novo = get_voo(idVoo)
+        return {"message": "Voo atualizado", "data": voo_novo}, 200
+    except mysql.connector.Error as err:
+        print("deu erro")
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
+
+
+@app.route("/voo/<string:idVoo>", methods=["DELETE"])
+def delete_voo(idVoo):
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"DELETE FROM voo WHERE id = {idVoo}")
+        db.commit()
+        return {"message": "Voo deletado"}, 200
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
 
 
 if __name__ == "__main__":
