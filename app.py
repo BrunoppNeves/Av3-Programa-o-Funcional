@@ -111,7 +111,7 @@ def get_passageiro(idPassageiro):
         db = get_db()
         cursor = db.cursor(dictionary=True)
         cursor.execute(
-            f"SELECT * FROM passageiro WHERE id = {idPassageiro}")
+            f"SELECT id, nome, cpf, email FROM passageiro WHERE id = {idPassageiro}")
         data = cursor.fetchall()
 
         return data
@@ -166,6 +166,93 @@ def delete_passageiro(idPassageiro):
     finally:
         if cursor:
             cursor.close()
+
+
+# CIA_AEREA
+
+@app.route("/cia_aerea", methods=["POST"])
+def create_ciaaerea():
+    try:
+        data = request.json
+        nome = data.get("nome")
+
+        if nome:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "INSERT INTO cia_aerea (nome) VALUES (%s)",
+                (nome,)
+            )
+            db.commit()
+            return {"message": "Cia Aérea adicionada"}, 201
+        else:
+            return {"error": "Dados inválidos"}, 400
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/cia_aerea/<string:idCiaaerea>", methods=["GET"])
+def get_ciaaerea(idCiaaerea):
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT * FROM cia_aerea WHERE id = {idCiaaerea}")
+        data = cursor.fetchall()
+
+        return data
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+
+@app.route("/cia_aerea/<string:idCiaaerea>", methods=["PATCH"])
+def update_ciaaerea(idCiaaerea):
+    cursor = None
+    try:
+        ciaaerea = get_ciaaerea(idCiaaerea)
+        if len(ciaaerea) <= 0:
+            return {"error": "Cia aérea não encontrada"}, 404
+
+        data = request.json
+        nome = data.get("nome") if data.get(
+            "nome") else ciaaerea[0].get("nome")
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"UPDATE cia_aerea SET nome = '{nome}' WHERE id = {idCiaaerea}"
+        )
+        db.commit()
+        ciaaerea_nova = get_ciaaerea(idCiaaerea)
+        return {"message": "Cia aérea atualizada", "data": ciaaerea_nova}, 200
+    except mysql.connector.Error as err:
+        print("deu erro")
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
+
+
+@app.route("/cia_aerea/<string:idCiaaerea>", methods=["DELETE"])
+def delete_ciaaerea(idCiaaerea):
+    cursor = None
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute(
+            f"DELETE FROM cia_aerea WHERE id = {idCiaaerea}")
+        db.commit()
+        return {"message": "Cia aérea deletada"}, 200
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        if cursor:
+            cursor.close()
+
 
 
 if __name__ == "__main__":
