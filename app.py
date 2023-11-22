@@ -442,13 +442,15 @@ def create_voo():
         destino = data.get("destino")
         cia_aerea_id = data.get("cia_aerea_id")
         horario = data.get("horario")
+        valor = data.get("valor")
+        vagas = data.get("vagas")
 
         if origem and destino and cia_aerea_id and horario:
             db = get_db()
             cursor = db.cursor()
             cursor.execute(
-                "INSERT INTO voo (origem, destino, cia_aerea_id, horario) VALUES (%s, %s, %s, %s)",
-                (origem, destino, cia_aerea_id, horario,)
+                "INSERT INTO voo (origem, destino, cia_aerea_id, horario, valor, vagas) VALUES (%s, %s, %s, %s, %s, %s)",
+                (origem, destino, cia_aerea_id, horario, valor, vagas,)
             )
             db.commit()
             return {"message": "Voo adicionado"}, 201
@@ -492,12 +494,16 @@ def update_voo(idVoo):
         cia_aerea_id = data.get("cia_aerea_id") if data.get(
             "cia_aerea_id") else voo[0].get("cia_aerea_id")
         horario = data.get("horario") if data.get(
-            "horario") else voo[0].get("horario")
+            "horario") else voo[0].get("horario")        
+        valor = data.get("valor") if data.get(
+            "valor") else voo[0].get("valor")
+        vagas = data.get("vagas") if data.get(
+            "vagas") else voo[0].get("vagas")        
 
         db = get_db()
         cursor = db.cursor()
         cursor.execute(
-            f"UPDATE voo SET origem = '{origem}', destino = '{destino}', cia_aerea_id = '{cia_aerea_id}', horario = '{horario}' WHERE id = {idVoo}"
+            f"UPDATE voo SET origem = '{origem}', destino = '{destino}', cia_aerea_id = '{cia_aerea_id}', horario = '{horario}', valor = '{valor}', vagas = '{vagas}' WHERE id = {idVoo}"
         )
         db.commit()
         voo_novo = get_voo(idVoo)
@@ -526,6 +532,60 @@ def delete_voo(idVoo):
         if cursor:
             cursor.close()
 
+# -->   PASSAGEIRO/VOO    <--
+
+@app.route("/voo/<string:idVoo>/passageiro/<string:idPassageiro>", methods=["POST"])
+def add_voo_passageiro(idVoo, idPassageiro):
+    try:
+        if idPassageiro and idVoo:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "INSERT INTO voo_has_passageiro (passageiro_id, voo_id) VALUES (%s, %s)",
+                (idPassageiro, idVoo,)
+            )
+            db.commit()
+            return {"message": "Passageiro adicionado no voo"}, 201
+        else:
+            return {"error": "Dados inválidos"}, 400
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+@app.route("/voo/<string:idVoo>/passageiro", methods=["GET"])
+def get_voo_passageiro(idVoo):
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT p.* FROM passageiro p JOIN voo_has_passageiro vp ON p.id = vp.passageiro_id WHERE vp.voo_id = {idVoo};")
+        data = cursor.fetchall()
+
+        return data
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
+
+@app.route("/voo/<string:idVoo>/passageiro/<string:idPassageiro>", methods=["DELETE"])
+def remove_voo_passageiro(idVoo, idPassageiro):
+    try:
+        if idPassageiro and idVoo:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+                "DELETE FROM voo_has_passageiro WHERE voo_id = %s AND passageiro_id = %s",
+                (idVoo, idPassageiro,)
+            )
+            db.commit()
+            return {"message": "Passageiro removido do voo"}, 201
+        else:
+            return {"error": "Dados inválidos"}, 400
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
 
 if __name__ == "__main__":
     with app.app_context():
