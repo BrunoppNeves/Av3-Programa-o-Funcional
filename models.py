@@ -1,5 +1,8 @@
-def create_tables(cursor):
-    cursor.execute("""
+def create_tables(execute):
+
+    queries = [
+        # Create passageiro table
+    """
         CREATE TABLE IF NOT EXISTS `agencia_de_viagens`.`passageiro` (
         `id` INT NOT NULL AUTO_INCREMENT,
         `nome` VARCHAR(45) NOT NULL,
@@ -10,10 +13,9 @@ def create_tables(cursor):
         UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE,
         UNIQUE INDEX `cpf_UNIQUE` (`cpf` ASC) VISIBLE)
         ENGINE = InnoDB;
-    """)
-
-    # Create cia_aerea table
-    cursor.execute("""
+    """,
+        # Create cia_aerea table
+    """
         CREATE TABLE IF NOT EXISTS `agencia_de_viagens`.`cia_aerea` (
         `id` INT NOT NULL AUTO_INCREMENT,
         `nome` VARCHAR(45) NOT NULL,
@@ -21,20 +23,18 @@ def create_tables(cursor):
         UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE,
         UNIQUE INDEX `nome_UNIQUE` (`nome` ASC) VISIBLE)
         ENGINE = InnoDB;
-    """)
-
-    # Create cidade table
-    cursor.execute("""
+    """,
+        # Create cidade table
+    """
         CREATE TABLE IF NOT EXISTS `agencia_de_viagens`.`cidade` (
         `id` INT NOT NULL AUTO_INCREMENT,
         `nome` VARCHAR(45) NOT NULL,
         PRIMARY KEY (`id`),
         UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE)
         ENGINE = InnoDB;
-    """)
-
-    # Create aeroporto table
-    cursor.execute("""
+    """,
+        # Create aeroporto table
+    """
         CREATE TABLE IF NOT EXISTS `agencia_de_viagens`.`aeroporto` (
         `id` INT NOT NULL AUTO_INCREMENT,
         `cidade_id` INT NOT NULL,
@@ -48,10 +48,9 @@ def create_tables(cursor):
             ON DELETE NO ACTION
             ON UPDATE NO ACTION)
         ENGINE = InnoDB;
-    """)
-
-    # Create voo table
-    cursor.execute("""
+    """,
+       # Create voo table
+    """
         CREATE TABLE IF NOT EXISTS `agencia_de_viagens`.`voo` (
         `id` INT NOT NULL AUTO_INCREMENT,
         `origem` INT NOT NULL,
@@ -81,10 +80,9 @@ def create_tables(cursor):
             ON DELETE NO ACTION
             ON UPDATE NO ACTION)
         ENGINE = InnoDB;
-    """)
-
-    # Create voo_has_passageiro table
-    cursor.execute("""
+    """,
+        # Create voo_has_passageiro table
+    """
         CREATE TABLE IF NOT EXISTS `agencia_de_viagens`.`voo_has_passageiro` (
         `voo_id` INT NOT NULL,
         `passageiro_id` INT NOT NULL,
@@ -102,4 +100,13 @@ def create_tables(cursor):
             ON DELETE NO ACTION
             ON UPDATE NO ACTION)
         ENGINE = InnoDB;
-    """)
+    """]
+
+
+    # FUNCIONAL: função lambda recursiva
+    execute_queries_recursive = lambda queries, index=0: (
+        execute(queries[index]),
+        execute_queries_recursive(queries, index + 1)
+    ) if index < len(queries) else None
+
+    execute_queries_recursive(queries)

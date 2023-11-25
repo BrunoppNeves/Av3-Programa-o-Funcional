@@ -38,6 +38,11 @@ def get_data(table):
         cursor.execute(f"SELECT * FROM {table}")
         data = cursor.fetchall()
 
+        # FUNCIONAL: uso do functor map
+        remove_pass = lambda u: u.pop('senha')
+        if table == "passageiro":
+            list(map(remove_pass, data))
+            
         return data
     except mysql.connector.Error as err:
         return {"error": f"Error: {err}"}, 500
@@ -90,8 +95,10 @@ def create_passageiro():
         senha = data.get("senha")
 
         if nome and cpf and email and senha:
-            hashed_password = bcrypt.hashpw(
-                senha.encode('utf-8'), bcrypt.gensalt())
+            
+            # FUNCIONAL: sucessivas chamadas de funções lambda utilizando currying
+            hash_pass = lambda p: lambda r: bcrypt.hashpw(p.encode('utf-8'), bcrypt.gensalt(rounds=r))
+            hashed_password = hash_pass(senha)(12)
 
             db = get_db()
             cursor = db.cursor()
@@ -589,5 +596,6 @@ def remove_voo_passageiro(idVoo, idPassageiro):
 
 if __name__ == "__main__":
     with app.app_context():
-        create_tables(get_db().cursor())
+        # FUNCIONAL: função lambda de alta ordem
+        create_tables(lambda query: get_db().cursor().execute(query))
     app.run(debug=True)
