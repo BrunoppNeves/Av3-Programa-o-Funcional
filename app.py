@@ -54,33 +54,41 @@ def get_data(table):
 
 @app.route("/login", methods=["POST"])
 def login():
-    try:
-        data = request.json
-        email = data.get("email")
-        senha = data.get("senha")
+    data = request.json
+    email = data.get("email")
+    senha = data.get("senha")
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
 
-        if email and senha:
-            db = get_db()
-            cursor = db.cursor(dictionary=True)
-            cursor.execute(
-                f"SELECT * FROM passageiro WHERE email = '{email}'"
-            )
-            passageiro = cursor.fetchone()
-
-            if passageiro:
-                # Verifique a senha criptografada usando bcrypt.checkpw
-                if bcrypt.checkpw(senha.encode('utf-8'), passageiro['senha'].encode('utf-8')):
-                    return {"message": "Login bem-sucedido"}, 200
-                else:
-                    return {"error": "Credenciais inválidas"}, 401
-            else:
-                return {"error": "Usuário não encontrado"}, 404
-        else:
+    # FUNCIONAL: uso de um monad
+    def maybe_bind(email, senha, f):
+        if not senha or not email:
             return {"error": "Dados inválidos"}, 400
-    except mysql.connector.Error as err:
-        return {"error": f"Error: {err}"}, 500
-    finally:
-        cursor.close()
+        else:
+            return f(email, senha)
+    
+    def maybe(email, senha):
+        return lambda f: maybe_bind(email, senha, f)
+
+    def safe_login(email, senha):
+        cursor.execute(
+            f"SELECT * FROM passageiro WHERE email = '{email}'"
+        )
+        passageiro = cursor.fetchone()
+
+        if passageiro:
+            # Verifique a senha criptografada usando bcrypt.checkpw
+            if bcrypt.checkpw(senha.encode('utf-8'), passageiro['senha'].encode('utf-8')):
+                return {"message": "Login bem-sucedido"}, 200
+            else:
+                return {"error": "Credenciais inválidas"}, 401
+        else:
+            return {"error": "Usuário não encontrado"}, 404
+        
+    result = maybe(email, senha)(safe_login)
+    cursor.close()
+    return result
+       
 
 # -------------------------------------->   PASSAGEIRO    <--------------------------------------
 
@@ -178,6 +186,20 @@ def delete_passageiro(idPassageiro):
         if cursor:
             cursor.close()
 
+@app.route("/passageiro/<string:idPassageiro>/voo", methods=["GET"])
+def get_passageiro_voo(idPassageiro):
+    try:
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT v.* FROM voo v JOIN voo_has_passageiro vp ON v.id = vp.voo_id WHERE vp.passageiro_id = {idPassageiro};")
+        data = cursor.fetchall()
+
+        return data
+    except mysql.connector.Error as err:
+        return {"error": f"Error: {err}"}, 500
+    finally:
+        cursor.close()
 
 # -------------------------------------->   CIA AÉREA    <--------------------------------------
 @app.route("/cia_aerea", methods=["POST"])
@@ -566,9 +588,16 @@ def get_voo_passageiro(idVoo):
         db = get_db()
         cursor = db.cursor(dictionary=True)
         cursor.execute(
-            f"SELECT p.* FROM passageiro p JOIN voo_has_passageiro vp ON p.id = vp.passageiro_id WHERE vp.voo_id = {idVoo};")
+            f"SELECT p.id, p.nome, p.cpf FROM passageiro p JOIN voo_has_passageiro vp ON p.id = vp.passageiro_id WHERE vp.voo_id = {idVoo};")
         data = cursor.fetchall()
 
+        # FUNCIONAL: dicionário dentro do escopo (no parâmetro) de uma função lambda
+        hide_cpf = lambda p: p["cpf"][0] + '*' * (len(p["cpf"]) - 2) + p["cpf"][-1] if len(p["cpf"]) > 2 else p["cpf"]
+
+        # FUNCIONAL: List Comprehension dentro do escopo de uma Lambda
+        encode_data = lambda l: [{'id': p['id'], 'nome': p['nome'], 'cpf': hide_cpf(p)} for p in l]
+
+        data = encode_data(data)
         return data
     except mysql.connector.Error as err:
         return {"error": f"Error: {err}"}, 500
