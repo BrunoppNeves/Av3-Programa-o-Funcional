@@ -91,7 +91,7 @@ def login():
        
 
 # -------------------------------------->   PASSAGEIRO    <--------------------------------------
-
+# RF02 - O sistema deve permitir que os passageiros sejam registrados. (create_passageiro())
 
 @app.route("/passageiro", methods=["POST"])
 def create_passageiro():
@@ -202,6 +202,7 @@ def get_passageiro_voo(idPassageiro):
         cursor.close()
 
 # -------------------------------------->   CIA AÉREA    <--------------------------------------
+# RF03 - O sistema deve permitir que as cias aéreas sejam registradas. (create_ciaaerea())
 @app.route("/cia_aerea", methods=["POST"])
 def create_ciaaerea():
     try:
@@ -397,7 +398,6 @@ def create_aeroporto():
     finally:
         cursor.close()
 
-
 @app.route("/aeroporto/<string:idAeroporto>", methods=["GET"])
 def get_aeroporto(idAeroporto):
     try:
@@ -461,7 +461,7 @@ def delete_aeroporto(idAeroporto):
             cursor.close()
 
 # -------------------------------------->   VOO    <--------------------------------------
-
+# RF01 - O sistema deve permitir que os voos sejam registrados. (create_voo())
 
 @app.route("/voo", methods=["POST"])
 def create_voo():
@@ -490,7 +490,8 @@ def create_voo():
     finally:
         cursor.close()
 
-
+# RF06 - O sistema deve permitir visualizar todos os voos de uma cia aérea. (get_voo())
+# RF07 - O sistema deve permitir visualizar todos os voos de um aeroporto. (get_voo())
 @app.route("/voo/<string:idVoo>", methods=["GET"])
 def get_voo(idVoo):
     try:
@@ -562,7 +563,7 @@ def delete_voo(idVoo):
             cursor.close()
 
 # -->   PASSAGEIRO/VOO    <--
-
+# RF04 - O sistema deve permitir que os passageiros sejam adicionados a um voo. (add_voo_passageiro())
 @app.route("/voo/<string:idVoo>/passageiro/<string:idPassageiro>", methods=["POST"])
 def add_voo_passageiro(idVoo, idPassageiro):
     try:
@@ -582,6 +583,7 @@ def add_voo_passageiro(idVoo, idPassageiro):
     finally:
         cursor.close()
 
+# RF05 - O sistema deve permitir visualizar todos os voos de um passageiro. (get_passageiro_voo())
 @app.route("/voo/<string:idVoo>/passageiro", methods=["GET"])
 def get_voo_passageiro(idVoo):
     try:
